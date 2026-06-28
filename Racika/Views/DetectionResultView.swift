@@ -15,7 +15,10 @@ struct DetectionResultView: View {
     @State private var showAccuracy = false
     @State private var showAbout = false
     @State private var showStorage = false
+    @State private var showAlternatives = false
     @State private var showRegional = false
+    
+    @State private var showAlternativesSheet = false
     
     var body: some View {
         VStack(spacing: 0) {
@@ -32,6 +35,7 @@ struct DetectionResultView: View {
                     } else if let info = spiceInfo {
                         aboutSection(info: info)
                         storageSection(info: info)
+                        alternativesButton(info: info)
                         if !info.regionalNames.isEmpty {
                             regionalNamesSection(info: info)
                         }
@@ -44,6 +48,11 @@ struct DetectionResultView: View {
             footerSection
         }
         .background(Color.rBg.ignoresSafeArea())
+        .sheet(isPresented: $showAlternativesSheet) {
+            if let info = spiceInfo {
+                AlternativesSheet(spiceName: result.displayName, alternatives: info.alternatives)
+            }
+        }
         .onAppear {
             triggerAnimations()
             fetchData()
@@ -160,6 +169,46 @@ struct DetectionResultView: View {
         .offset(y: showStorage ? 0 : 20)
     }
     
+    private func alternativesButton(info: SpiceAIInfo) -> some View {
+        Button(action: {
+            showAlternativesSheet = true
+        }) {
+            HStack(spacing: 16) {
+                ZStack {
+                    Circle()
+                        .fill(Color.rBrownLight)
+                        .frame(width: 44, height: 44)
+                    Image(systemName: "arrow.2.squarepath")
+                        .font(.system(size: 18, weight: .bold))
+                        .foregroundColor(Color.rBrown)
+                }
+                
+                VStack(alignment: .leading, spacing: 2) {
+                    Text("Alternatif Bahan")
+                        .font(.system(size: 15, weight: .bold))
+                        .foregroundColor(Color.rText1)
+                    Text("Cari pengganti jika bahan ini tidak tersedia")
+                        .font(.system(size: 12))
+                        .foregroundColor(Color.rText3)
+                }
+                
+                Spacer()
+                
+                Image(systemName: "chevron.right")
+                    .font(.system(size: 12, weight: .semibold))
+                    .foregroundColor(Color.rText3.opacity(0.5))
+            }
+            .padding(16)
+            .background(Color.rCream)
+            .cornerRadius(20)
+            .overlay(RoundedRectangle(cornerRadius: 20).stroke(Color.rBorder, lineWidth: 1))
+            .padding(.horizontal, 20)
+        }
+        .buttonStyle(.plain)
+        .opacity(showAlternatives ? 1 : 0)
+        .offset(y: showAlternatives ? 0 : 20)
+    }
+    
     private func regionalNamesSection(info: SpiceAIInfo) -> some View {
         VStack(alignment: .leading, spacing: 12) {
             Text("NAMA LAIN")
@@ -221,7 +270,8 @@ struct DetectionResultView: View {
                     about: spiceInfo?.about ?? "",
                     storageMethod: spiceInfo?.storageMethod ?? "",
                     storageIcon: spiceInfo?.storageIcon ?? "",
-                    regionalNames: spiceInfo?.regionalNames ?? []
+                    regionalNames: spiceInfo?.regionalNames ?? [],
+                    alternatives: spiceInfo?.alternatives ?? []
                 )
                 onSave(finalResult)
             }) {
@@ -336,7 +386,8 @@ struct DetectionResultView: View {
                     // Trigger stagger animations for AI content
                     withAnimation(.easeOut(duration: 0.5).delay(0.1)) { self.showAbout = true }
                     withAnimation(.easeOut(duration: 0.5).delay(0.2)) { self.showStorage = true }
-                    withAnimation(.easeOut(duration: 0.5).delay(0.3)) { self.showRegional = true }
+                    withAnimation(.easeOut(duration: 0.5).delay(0.3)) { self.showAlternatives = true }
+                    withAnimation(.easeOut(duration: 0.5).delay(0.4)) { self.showRegional = true }
                 }
             } catch {
                 await MainActor.run {
@@ -362,5 +413,83 @@ struct RoundedCorner: Shape {
     func path(in rect: CGRect) -> Path {
         let path = UIBezierPath(roundedRect: rect, byRoundingCorners: corners, cornerRadii: CGSize(width: radius, height: radius))
         return Path(path.cgPath)
+    }
+}
+
+struct AlternativesSheet: View {
+    let spiceName: String
+    let alternatives: [AlternativeSpice]
+    @Environment(\.dismiss) private var dismiss
+    
+    var body: some View {
+        NavigationStack {
+            ScrollView {
+                VStack(spacing: 20) {
+                    Text("Jika Anda tidak memiliki **\(spiceName)**, Anda dapat menggunakan beberapa bahan alternatif berikut:")
+                        .font(.system(size: 15))
+                        .foregroundColor(Color.rText2)
+                        .multilineTextAlignment(.leading)
+                        .padding(.horizontal, 20)
+                        .padding(.top, 16)
+                    
+                    if alternatives.isEmpty {
+                        VStack(spacing: 12) {
+                            Image(systemName: "exclamationmark.bubble")
+                                .font(.system(size: 40))
+                                .foregroundColor(Color.rText3)
+                            Text("Tidak ditemukan bahan alternatif.")
+                                .font(.system(size: 14, weight: .medium))
+                                .foregroundColor(Color.rText3)
+                        }
+                        .frame(maxWidth: .infinity)
+                        .padding(.top, 40)
+                    } else {
+                        ForEach(alternatives) { item in
+                            VStack(alignment: .leading, spacing: 10) {
+                                HStack(spacing: 12) {
+                                    ZStack {
+                                        Circle()
+                                            .fill(Color.rBrownLight)
+                                            .frame(width: 32, height: 32)
+                                        Image(systemName: "shuffle")
+                                            .font(.system(size: 14, weight: .bold))
+                                            .foregroundColor(Color.rBrown)
+                                    }
+                                    
+                                    Text(item.name)
+                                        .font(.system(size: 16, weight: .bold))
+                                        .foregroundColor(Color.rText1)
+                                }
+                                
+                                Text(item.reason)
+                                    .font(.system(size: 14))
+                                    .foregroundColor(Color.rText2)
+                                    .lineSpacing(4)
+                                    .padding(.leading, 44)
+                            }
+                            .padding(16)
+                            .frame(maxWidth: .infinity, alignment: .leading)
+                            .background(Color.rCream)
+                            .cornerRadius(16)
+                            .overlay(RoundedRectangle(cornerRadius: 16).stroke(Color.rBorder, lineWidth: 1))
+                            .padding(.horizontal, 20)
+                        }
+                    }
+                }
+                .padding(.bottom, 32)
+            }
+            .background(Color.rBg.ignoresSafeArea())
+            .navigationTitle("Alternatif Bahan")
+            .navigationBarTitleDisplayMode(.inline)
+            .toolbar {
+                ToolbarItem(placement: .navigationBarTrailing) {
+                    Button("Tutup") {
+                        dismiss()
+                    }
+                    .foregroundColor(Color.rBrown)
+                    .font(.system(size: 16, weight: .semibold))
+                }
+            }
+        }
     }
 }

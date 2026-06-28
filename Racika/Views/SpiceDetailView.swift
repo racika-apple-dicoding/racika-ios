@@ -13,7 +13,10 @@ struct SpiceDetailView: View {
     @State private var showAccuracy = false
     @State private var showAbout = false
     @State private var showStorage = false
+    @State private var showAlternatives = false
     @State private var showRegional = false
+
+    @State private var showAlternativesSheet = false
 
     var body: some View {
         VStack(spacing: 0) {
@@ -26,6 +29,9 @@ struct SpiceDetailView: View {
                     if !result.storageMethod.isEmpty {
                         storageSection
                     }
+                    if !result.alternatives.isEmpty {
+                        alternativesButton
+                    }
                     if !result.regionalNames.isEmpty {
                         regionalNamesSection
                     }
@@ -35,6 +41,9 @@ struct SpiceDetailView: View {
             footerSection
         }
         .background(Color.rBg.ignoresSafeArea())
+        .sheet(isPresented: $showAlternativesSheet) {
+            AlternativesSheet(spiceName: result.displayName, alternatives: result.alternatives)
+        }
         .navigationBarTitleDisplayMode(.inline)
         .toolbar {
             ToolbarItem(placement: .navigationBarTrailing) {
@@ -175,6 +184,46 @@ struct SpiceDetailView: View {
         .offset(y: showStorage ? 0 : 20)
     }
 
+    private var alternativesButton: some View {
+        Button(action: {
+            showAlternativesSheet = true
+        }) {
+            HStack(spacing: 16) {
+                ZStack {
+                    Circle()
+                        .fill(Color.rBrownLight)
+                        .frame(width: 44, height: 44)
+                    Image(systemName: "arrow.2.squarepath")
+                        .font(.system(size: 18, weight: .bold))
+                        .foregroundColor(Color.rBrown)
+                }
+                
+                VStack(alignment: .leading, spacing: 2) {
+                    Text("Alternatif Bahan")
+                        .font(.system(size: 15, weight: .bold))
+                        .foregroundColor(Color.rText1)
+                    Text("Cari pengganti jika bahan ini tidak tersedia")
+                        .font(.system(size: 12))
+                        .foregroundColor(Color.rText3)
+                }
+                
+                Spacer()
+                
+                Image(systemName: "chevron.right")
+                    .font(.system(size: 12, weight: .semibold))
+                    .foregroundColor(Color.rText3.opacity(0.5))
+            }
+            .padding(16)
+            .background(Color.rCream)
+            .cornerRadius(20)
+            .overlay(RoundedRectangle(cornerRadius: 20).stroke(Color.rBorder, lineWidth: 1))
+            .padding(.horizontal, 20)
+        }
+        .buttonStyle(.plain)
+        .opacity(showAlternatives ? 1 : 0)
+        .offset(y: showAlternatives ? 0 : 20)
+    }
+
     // MARK: - Regional Names
 
     private var regionalNamesSection: some View {
@@ -252,7 +301,8 @@ struct SpiceDetailView: View {
         withAnimation(.spring(response: 0.5, dampingFraction: 0.6).delay(0.2)) { showAccuracy = true }
         withAnimation(.easeOut(duration: 0.4).delay(0.3)) { showAbout = true }
         withAnimation(.easeOut(duration: 0.4).delay(0.4)) { showStorage = true }
-        withAnimation(.easeOut(duration: 0.4).delay(0.5)) { showRegional = true }
+        withAnimation(.easeOut(duration: 0.4).delay(0.5)) { showAlternatives = true }
+        withAnimation(.easeOut(duration: 0.4).delay(0.6)) { showRegional = true }
     }
 
     private func formatDate(_ date: Date) -> String {

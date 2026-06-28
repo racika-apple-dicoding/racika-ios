@@ -1,7 +1,7 @@
 import Foundation
 import UIKit
 
-struct RegionalName: Identifiable, Codable {
+struct RegionalName: Identifiable, Codable, Hashable {
     let id = UUID()
     let language: String
     let name: String
@@ -9,6 +9,17 @@ struct RegionalName: Identifiable, Codable {
     enum CodingKeys: String, CodingKey {
         case language
         case name
+    }
+}
+
+struct AlternativeSpice: Identifiable, Codable, Hashable {
+    let id = UUID()
+    let name: String
+    let reason: String
+    
+    enum CodingKeys: String, CodingKey {
+        case name
+        case reason
     }
 }
 
@@ -25,6 +36,7 @@ struct SpiceDetectionResult: Identifiable, Hashable {
     var storageMethod: String = ""
     var storageIcon: String = ""
     var regionalNames: [RegionalName] = []
+    var alternatives: [AlternativeSpice] = []
 
     // Hashable by id only — UIImage is not Hashable
     static func == (lhs: SpiceDetectionResult, rhs: SpiceDetectionResult) -> Bool {

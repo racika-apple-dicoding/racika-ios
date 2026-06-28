@@ -6,6 +6,7 @@ struct SpiceAIInfo: Codable {
     let storageMethod: String
     let storageIcon: String
     let regionalNames: [RegionalName]
+    let alternatives: [AlternativeSpice]
     
     enum CodingKeys: String, CodingKey {
         case latinName = "latin_name"
@@ -13,6 +14,7 @@ struct SpiceAIInfo: Codable {
         case storageMethod = "storage_method"
         case storageIcon = "storage_icon"
         case regionalNames = "regional_names"
+        case alternatives
     }
 }
 
@@ -34,6 +36,10 @@ actor AIService {
           "regional_names": [
             {"language": "Jawa", "name": "..."},
             {"language": "Sunda", "name": "..."}
+          ],
+          "alternatives": [
+            {"name": "Nama Rempah Alternatif 1", "reason": "Alasan singkat mengapa bisa menjadi alternatif."},
+            {"name": "Nama Rempah Alternatif 2", "reason": "Alasan singkat mengapa bisa menjadi alternatif."}
           ]
         }
         Catatan untuk storage_icon: Gunakan nama SF Symbol yang valid (contoh: thermometer.snowflake, leaf, leaf.fill, drop.fill, dll).
