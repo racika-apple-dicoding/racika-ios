@@ -8,9 +8,15 @@
 import SwiftUI
 
 struct HomeView: View {
-    private var historyStore = HistoryStore.shared
+    private let historyStore = HistoryStore.shared
     @State private var selectedResult: SpiceDetectionResult?
     @State private var showAskWifeAlert = false
+    
+    // OCR States
+    @State private var showRecipeScanner = false
+    @State private var showRecipeResults = false
+    @State private var extractedRecipeSpices: [String] = []
+    @State private var isExtractingText = false
 
     var body: some View {
         NavigationStack {
@@ -24,6 +30,15 @@ struct HomeView: View {
                         }
                     }
                     .buttonStyle(.plain)
+
+                    // MARK: - Scan Resep
+                    Button(action: {
+                        showRecipeScanner = true
+                    }) {
+                        recipeScannerCard
+                    }
+                    .buttonStyle(.plain)
+                    .disabled(isExtractingText)
 
                     // MARK: - Tanya ke Istri Button
                     askWifeButton
@@ -45,7 +60,11 @@ struct HomeView: View {
                     CameraView()
                 }
             }
+            .navigationDestination(isPresented: $showRecipeResults) {
+                RecipeResultsView(extractedSpices: extractedRecipeSpices)
+            }
             .navigationDestination(for: SpiceDetectionResult.self) { result in
+
                 SpiceDetailView(result: result) {
                     historyStore.delete(result)
                 }
@@ -56,6 +75,16 @@ struct HomeView: View {
                         .font(.system(size: 24, weight: .bold))
                         .foregroundStyle(Color.rText1)
                 }
+                ToolbarItem(placement: .topBarTrailing) {
+                    NavigationLink(destination: ShoppingListView()) {
+                        Image(systemName: "cart.fill")
+                            .font(.system(size: 16))
+                            .foregroundStyle(Color.rBrown)
+                            .padding(8)
+                            .background(Color.rCream)
+                            .clipShape(Circle())
+                    }
+                }
             }
             .toolbarBackground(Color.rBg, for: .navigationBar)
             .toolbarBackground(.visible, for: .navigationBar)
@@ -63,6 +92,27 @@ struct HomeView: View {
                 Button("Oke, siap!", role: .cancel) {}
             } message: {
                 Text("Fitur ini sedang dalam pengembangan. Segera hadir!")
+            }
+            .sheet(isPresented: $showRecipeScanner) {
+                DocumentScannerView { images in
+                    isExtractingText = true
+                    Task {
+                        do {
+                            let lines = try await OCRService.shared.extractText(from: images)
+                            await MainActor.run {
+                                extractedRecipeSpices = lines
+                                isExtractingText = false
+                                showRecipeResults = true
+                            }
+                        } catch {
+                            await MainActor.run {
+                                isExtractingText = false
+                                print("OCR Error: \(error.localizedDescription)")
+                            }
+                        }
+                    }
+                }
+                .ignoresSafeArea()
             }
         }
     }
@@ -118,6 +168,39 @@ struct HomeView: View {
         }
         .padding(16)
         .background(Color.rBrown)
+        .clipShape(RoundedRectangle(cornerRadius: 18))
+    }
+    
+    // MARK: - Recipe Scanner Card
+    
+    private var recipeScannerCard: some View {
+        HStack(spacing: 12) {
+            ZStack {
+                RoundedRectangle(cornerRadius: 12)
+                    .fill(Color.white.opacity(0.2))
+                    .frame(width: 44, height: 44)
+                Image(systemName: "doc.text.viewfinder")
+                    .font(.system(size: 20))
+                    .foregroundStyle(.white)
+            }
+            VStack(alignment: .leading, spacing: 2) {
+                Text("Scan Resep")
+                    .font(.system(size: 16, weight: .bold))
+                    .foregroundStyle(.white)
+                Text("Ekstrak bumbu dari buku atau foto")
+                    .font(.system(size: 12))
+                    .foregroundStyle(.white.opacity(0.8))
+            }
+            Spacer()
+            
+            if isExtractingText {
+                ProgressView()
+                    .tint(.white)
+                    .padding(.trailing, 8)
+            }
+        }
+        .padding(16)
+        .background(Color.rGreen)
         .clipShape(RoundedRectangle(cornerRadius: 18))
     }
 
