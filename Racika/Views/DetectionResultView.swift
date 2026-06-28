@@ -210,6 +210,7 @@ struct DetectionResultView: View {
     private var footerSection: some View {
         VStack(spacing: 12) {
             Button(action: {
+                guard !isLoading else { return }
                 let finalResult = SpiceDetectionResult(
                     classLabel: result.classLabel,
                     displayName: result.displayName,
@@ -224,16 +225,33 @@ struct DetectionResultView: View {
                 )
                 onSave(finalResult)
             }) {
-                Text("Simpan Hasil")
-                    .font(.system(size: 16, weight: .bold))
-                    .foregroundColor(.white)
-                    .frame(maxWidth: .infinity)
-                    .padding(.vertical, 16)
-                    .background(Color.rGreen)
-                    .clipShape(Capsule())
-                    .shadow(color: Color.rGreen.opacity(0.3), radius: 8, y: 4)
+                ZStack {
+                    // Label utama — tersembunyi saat loading agar ukuran tetap stabil
+                    Text("Simpan Hasil")
+                        .font(.system(size: 16, weight: .bold))
+                        .opacity(isLoading ? 0 : 1)
+
+                    // Spinner — tampil saat loading
+                    if isLoading {
+                        HStack(spacing: 8) {
+                            ProgressView()
+                                .tint(.white)
+                                .scaleEffect(0.85)
+                            Text("Memuat informasi...")
+                                .font(.system(size: 15, weight: .semibold))
+                        }
+                    }
+                }
+                .foregroundColor(.white)
+                .frame(maxWidth: .infinity)
+                .padding(.vertical, 16)
+                .background(isLoading ? Color.rGreen.opacity(0.55) : Color.rGreen)
+                .clipShape(Capsule())
+                .shadow(color: isLoading ? .clear : Color.rGreen.opacity(0.3), radius: 8, y: 4)
+                .animation(.easeInOut(duration: 0.25), value: isLoading)
             }
-            
+            .disabled(isLoading)
+
             Button(action: onRetake) {
                 Text("Scan Ulang")
                     .font(.system(size: 16, weight: .semibold))
