@@ -24,7 +24,7 @@ struct AlternativeSpice: Identifiable, Codable, Hashable {
 }
 
 struct SpiceDetectionResult: Identifiable, Hashable {
-    let id = UUID()
+    let id: UUID
     let classLabel: String
     let displayName: String
     let accuracy: Double
@@ -37,6 +37,34 @@ struct SpiceDetectionResult: Identifiable, Hashable {
     var storageIcon: String = ""
     var regionalNames: [RegionalName] = []
     var alternatives: [AlternativeSpice] = []
+
+    init(
+        id: UUID = UUID(),
+        classLabel: String,
+        displayName: String,
+        accuracy: Double,
+        capturedImage: UIImage,
+        capturedDate: Date,
+        latinName: String = "",
+        about: String = "",
+        storageMethod: String = "",
+        storageIcon: String = "",
+        regionalNames: [RegionalName] = [],
+        alternatives: [AlternativeSpice] = []
+    ) {
+        self.id = id
+        self.classLabel = classLabel
+        self.displayName = displayName
+        self.accuracy = accuracy
+        self.capturedImage = capturedImage
+        self.capturedDate = capturedDate
+        self.latinName = latinName
+        self.about = about
+        self.storageMethod = storageMethod
+        self.storageIcon = storageIcon
+        self.regionalNames = regionalNames
+        self.alternatives = alternatives
+    }
 
     // Hashable by id only — UIImage is not Hashable
     static func == (lhs: SpiceDetectionResult, rhs: SpiceDetectionResult) -> Bool {
